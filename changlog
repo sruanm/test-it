@@ -1,0 +1,6 @@
+error middleware configurado, entidades mapeadas
+36m - auth controller terminado
+49m- auth testada e funcional com auth middleware
+01:24 - controllers de assisted todo criado, nao testado ainda
+01:44 - testei o token de auth ok, perdi tmepo pq nao botei uma mesnagem de erro clara no parsede createAssisted
+02:17 - back terminado
