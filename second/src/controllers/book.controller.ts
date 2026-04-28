@@ -64,6 +64,21 @@ function parseGetQueryParams(query: Partial<GetQueryParams> | undefined) {
     return params
 }
 
+function getBookById(id: number) {
+    const repo = AppDataSource.getRepository(Book);
+    return repo.findOneBy({ id })
+}
+
+async function getBookByIdAndThrowsNotFound(id: number) {
+    const book = await getBookById(id)
+
+    if (!book) {
+        throw new HTTPError(404, "Book not found")
+    }
+
+    return book
+}
+
 export class BookController {
     static async getAll(req: Request, res: Response<Omit<Book, "evaluations">[]>, next: NextFunction) {
         try {
@@ -90,17 +105,12 @@ export class BookController {
         try {
             const id = parseIntIdParam(req.params["id"]);
 
-            const bookrepo = AppDataSource.getRepository(Book)
-            const findedBook = await bookrepo.findOneBy({ id })
-
-            if (!findedBook) {
-                throw new HTTPError(404, "Book not found")
-            }
+            const book = await getBookByIdAndThrowsNotFound(id)
 
             const evaluationsRepo = AppDataSource.getRepository(Evaluation)
             const evaluations = await evaluationsRepo.find({
                 where: {
-                    book: findedBook
+                    book
                 },
                 select: ["id", "owner", "commentary", "hasLiked"]
             })
@@ -138,19 +148,45 @@ export class BookController {
             const id = parseIntIdParam(req.params["id"]);
             const payload = parseCreateEvtBody(req.body);
 
-            const bookrepo = AppDataSource.getRepository(Book)
-            const findedBook = await bookrepo.findOneBy({ id })
-
-            if (!findedBook) {
-                throw new HTTPError(404, "Book not found")
-            }
+            const book = await getBookByIdAndThrowsNotFound(id)
 
             const evaluationRepo = AppDataSource.getRepository(Evaluation);
-            const newEvaluation = evaluationRepo.create({ book: findedBook, ...payload })
+            const newEvaluation = evaluationRepo.create({ book, ...payload })
 
             const { owner: _, book: __, ...safeEvaluation } = await evaluationRepo.save(newEvaluation)
 
             return res.status(201).json(safeEvaluation)
+        } catch (err) {
+            return next(err)
+        }
+    }
+
+    static async deleteEvaluation(req: Request, res: Response, next: NextFunction) {
+        try {
+
+
+            const bookId = parseIntIdParam(req.params["id"]);
+            const evaluationId = parseIntIdParam(req.params["evaluationId"]);
+
+
+            const repo = AppDataSource.getRepository(Evaluation)
+            const loggedUser = (req as any).user as User;
+
+            const evaluation = await repo.findOneBy({
+                id: evaluationId,
+                owner: loggedUser,
+                book: {
+                    id: bookId
+                },
+            })
+
+            if (!evaluation) {
+                throw new HTTPError(404, "Evaluation not found")
+            }
+
+            await repo.delete(evaluation.id);
+
+            return res.status(204);
         } catch (err) {
             return next(err)
         }
