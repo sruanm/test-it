@@ -28,7 +28,7 @@ export async function authMiddleware(req: Request, _res: Response, next: NextFun
         const unauthorizedErr = new HTTPError(401, "Unauthorized");
 
         if (!token) {
-            throw unauthorizedErr;
+            throw new HTTPError(401, "Unauthorized");
         }
 
         let email: string | null = null;
@@ -36,15 +36,17 @@ export async function authMiddleware(req: Request, _res: Response, next: NextFun
         try {
             const decoded = jwt.verify(token, "SECRET");
             if (typeof decoded !== "string" && decoded) {
-                if (decoded?.sub === "string") {
+                if (typeof decoded?.sub === "string") {
                     email = decoded.sub;
                 }
             }
-        } catch {
+        } catch (err) {
             email = null;
         }
 
         if (!email) {
+            throw new HTTPError(500, 'achei')
+
             throw unauthorizedErr;
         }
 

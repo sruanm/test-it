@@ -75,8 +75,8 @@ export class AuthController {
                 throw unauthorizedErr;
             }
 
-            const ONE_MINUTE = 60;
-            const token = jwt.sign({ sub: findedUser.email }, "SECRET", { expiresIn: ONE_MINUTE })
+            const ONE_HOUR_IN_SECS = 60 * 60;
+            const token = jwt.sign({ sub: findedUser.email }, "SECRET", { expiresIn: ONE_HOUR_IN_SECS })
 
             const { password: _, ...safeUser } = findedUser;
             return res.status(200).json({

@@ -23,7 +23,7 @@ function parseIntIdParam(rawId: string | undefined) {
 
 
 function parseCreateBody(body: Partial<CreateBookReq> | undefined) {
-    if (body && typeof body?.author === "string" && typeof body?.gender === "string" && typeof body?.title === "string") {
+    if (!body || typeof body?.author !== "string" || typeof body?.gender !== "string" || typeof body?.title !== "string") {
         throw new HTTPError(400, "All body params must be sent")
     }
 
@@ -146,7 +146,7 @@ export class BookController {
             const book = await bookRepo.findOne({
                 where: { id: bookId, },
                 relations: {
-                    registeredBy: true
+                    registeredBy: true,
                 }
             })
 
@@ -162,12 +162,12 @@ export class BookController {
 
             const evaluationRepo = AppDataSource.getRepository(Evaluation);
 
-            const findedEvaluation = await evaluationRepo.findOneBy({
+            const findedEvaluations = await evaluationRepo.countBy({
                 book,
                 owner: loggedUser
             })
 
-            if (findedEvaluation) {
+            if (findedEvaluations) {
                 throw new HTTPError(409, "User already evaluated this book")
             }
 

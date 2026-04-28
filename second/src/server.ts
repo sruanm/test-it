@@ -1,7 +1,7 @@
 import express from 'express'
 import { AppDataSource } from './data-source';
 import "reflect-metadata"
-import { errorMiddleware, logMiddleware } from './middlewares';
+import { authMiddleware, errorMiddleware, logMiddleware } from './middlewares';
 import { authRouter } from './routers/auth.router';
 import cors from 'cors'
 import { bookRouter } from './routers/book.router';
@@ -16,6 +16,8 @@ async function main() {
 
 
     app.use("/auth", authRouter);
+
+    app.use(authMiddleware)
     app.use("/books", bookRouter)
 
 
