@@ -1,5 +1,6 @@
 import Express from 'express'
 import { AppDataSource } from './data-source';
+import "reflect-metadata"
 
 async function main() {
     const app = Express();
