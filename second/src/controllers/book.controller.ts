@@ -5,6 +5,9 @@ import { AppDataSource } from "../data-source";
 
 type CreateBookReq = Omit<Book, "id" | "registeredBy" | "evaluations">
 
+const bookGenders: BookGender[] = ["fic", "bio", "tec", "child"]
+
+
 function parseCreateBody(body: Partial<CreateBookReq> | undefined) {
     if (body && typeof body?.author === "string" && typeof body?.gender === "string" && typeof body?.title === "string") {
         throw new HTTPError(400, "All body params must be sent")
@@ -16,9 +19,7 @@ function parseCreateBody(body: Partial<CreateBookReq> | undefined) {
         throw new HTTPError(400, "All strings must be not empty")
     }
 
-    const genders: BookGender[] = ["fic", "bio", "tec", "child"]
-
-    if (!genders.includes(gender as BookGender)) {
+    if (!bookGenders.includes(gender as BookGender)) {
         throw new HTTPError(400, "Book gender must be a valid category")
     }
 
@@ -29,7 +30,48 @@ function parseCreateBody(body: Partial<CreateBookReq> | undefined) {
     }
 }
 
+interface GetQueryParams {
+    gender: string;
+    orderBy: string;
+}
+
+
+function parseGetQueryParams(query: Partial<GetQueryParams> | undefined) {
+    const params: Partial<GetQueryParams> = {}
+    if (query) {
+        if (query?.gender && bookGenders.includes(query.gender as BookGender)) {
+            params.gender = query.gender as BookGender;
+        }
+        else if (query?.orderBy && query.orderBy === "bestRated") {
+            params.orderBy = query.orderBy;
+        }
+    }
+
+    return params
+}
+
 export class BookController {
+    static async getAll(req: Request, res: Response<Omit<Book, "evaluations">[]>, next: NextFunction) {
+        try {
+            const filters = parseGetQueryParams(req.params);
+
+            const repo = AppDataSource.getRepository(Book);
+            const books = await repo.find({
+                where: {
+                    ...(filters.gender ? { gender: filters.gender as BookGender } : {})
+                },
+                relations: {
+                    registeredBy: true
+                }
+            })
+
+            return res.status(200).json(books);
+
+        } catch (err) {
+            return next(err);
+        }
+    }
+
     static async createBook(req: Request, res: Response<Omit<Book, "registeredBy" | "evaluations">>, next: NextFunction) {
         try {
             const payload = parseCreateBody(req.body);
