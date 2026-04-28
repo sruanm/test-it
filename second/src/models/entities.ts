@@ -33,10 +33,16 @@ export class Book {
 
     @ManyToOne(() => User, (user) => user.registeredBooks)
     registeredBy!: Relation<User>
+
+    @OneToMany(() => Evaluation, (evaluation) => evaluation.book)
+    evaluations!: Relation<Evaluation[]>
 }
 
 @Entity()
 export class Evaluation {
     @PrimaryGeneratedColumn()
     id!: number;
+
+    @ManyToOne(() => Book, (book) => book.evaluations)
+    book!: Relation<Book>
 }
