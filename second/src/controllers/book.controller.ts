@@ -7,6 +7,20 @@ type CreateBookReq = Omit<Book, "id" | "registeredBy" | "evaluations">
 
 const bookGenders: BookGender[] = ["fic", "bio", "tec", "child"]
 
+function parseIntIdParam(rawId: string | undefined) {
+    if (!rawId) {
+        throw new HTTPError(500, "Server routes misconfiguration")
+    }
+
+    const id = parseInt(rawId)
+
+    if (Number.isNaN(id)) {
+        throw new HTTPError(404, "Book not found")
+    }
+
+    return id;
+}
+
 
 function parseCreateBody(body: Partial<CreateBookReq> | undefined) {
     if (body && typeof body?.author === "string" && typeof body?.gender === "string" && typeof body?.title === "string") {
@@ -74,25 +88,13 @@ export class BookController {
 
     static async getAllBookEvaluations(req: Request, res: Response<Omit<Evaluation, "book">[]>, next: NextFunction) {
         try {
-            const rawId = req.params["id"];
+            const id = parseIntIdParam(req.params["id"]);
 
-            if (!rawId) {
-                throw new HTTPError(500, "Server routes misconfiguration")
-            }
-
-            const id = parseInt(rawId)
-
-            if (Number.isNaN(id)) {
-                throw new HTTPError(400, "Book not found")
-            }
-
-            const repo = AppDataSource.getRepository(Book)
-            const findedBook = await repo.findOneBy({
-                id
-            })
+            const bookrepo = AppDataSource.getRepository(Book)
+            const findedBook = await bookrepo.findOneBy({ id })
 
             if (!findedBook) {
-                throw new HTTPError(400, "Book not found")
+                throw new HTTPError(404, "Book not found")
             }
 
             const evaluationsRepo = AppDataSource.getRepository(Evaluation)
@@ -129,5 +131,51 @@ export class BookController {
         } catch (err) {
             return next(err);
         }
+    }
+
+    static async createEvaluation(req: Request, res: Response<Omit<Evaluation, "owner" | "book">>, next: NextFunction) {
+        try {
+            const id = parseIntIdParam(req.params["id"]);
+            const payload = parseCreateEvtBody(req.body);
+
+            const bookrepo = AppDataSource.getRepository(Book)
+            const findedBook = await bookrepo.findOneBy({ id })
+
+            if (!findedBook) {
+                throw new HTTPError(404, "Book not found")
+            }
+
+            const evaluationRepo = AppDataSource.getRepository(Evaluation);
+            const newEvaluation = evaluationRepo.create({ book: findedBook, ...payload })
+
+            const { owner: _, book: __, ...safeEvaluation } = await evaluationRepo.save(newEvaluation)
+
+            return res.status(201).json(safeEvaluation)
+        } catch (err) {
+            return next(err)
+        }
+    }
+}
+
+type CreateEvaluationRequest = Omit<Evaluation, "id" | "owner" | "book">
+
+function parseCreateEvtBody(body: Partial<CreateEvaluationRequest> | undefined) {
+    if (!body) {
+        throw new HTTPError(400, "A payload must be sent")
+    }
+
+    if ((body?.commentary && typeof body?.commentary !== "string") || typeof body.hasLiked !== "boolean") {
+        throw new HTTPError(400, "All create data must be sent")
+    }
+
+    const commentary = body.commentary?.trim();
+
+    if (!commentary) {
+        throw new HTTPError(400, "Empty string not allowed on commentary")
+    }
+
+    return {
+        commentary,
+        hasLiked: body.hasLiked
     }
 }
