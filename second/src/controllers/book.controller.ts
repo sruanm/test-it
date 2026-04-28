@@ -1,6 +1,6 @@
 import { NextFunction, Request, Response } from "express";
 import { HTTPError } from "../errors";
-import { Book, BookGender, User } from "../models/entities";
+import { Book, BookGender, Evaluation, User } from "../models/entities";
 import { AppDataSource } from "../data-source";
 
 type CreateBookReq = Omit<Book, "id" | "registeredBy" | "evaluations">
@@ -66,6 +66,44 @@ export class BookController {
             })
 
             return res.status(200).json(books);
+
+        } catch (err) {
+            return next(err);
+        }
+    }
+
+    static async getAllBookEvaluations(req: Request, res: Response<Omit<Evaluation, "book">[]>, next: NextFunction) {
+        try {
+            const rawId = req.params["id"];
+
+            if (!rawId) {
+                throw new HTTPError(500, "Server routes misconfiguration")
+            }
+
+            const id = parseInt(rawId)
+
+            if (Number.isNaN(id)) {
+                throw new HTTPError(400, "Book not found")
+            }
+
+            const repo = AppDataSource.getRepository(Book)
+            const findedBook = await repo.findOneBy({
+                id
+            })
+
+            if (!findedBook) {
+                throw new HTTPError(400, "Book not found")
+            }
+
+            const evaluationsRepo = AppDataSource.getRepository(Evaluation)
+            const evaluations = await evaluationsRepo.find({
+                where: {
+                    book: findedBook
+                },
+                select: ["id", "owner", "commentary", "hasLiked"]
+            })
+
+            return res.status(200).json(evaluations)
 
         } catch (err) {
             return next(err);

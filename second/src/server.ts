@@ -4,6 +4,7 @@ import "reflect-metadata"
 import { errorMiddleware, logMiddleware } from './middlewares';
 import { authRouter } from './routers/auth.router';
 import cors from 'cors'
+import { bookRouter } from './routers/book.router';
 
 async function main() {
     const app = express();
@@ -15,6 +16,8 @@ async function main() {
 
 
     app.use("/auth", authRouter);
+    app.use("/books", bookRouter)
+
 
     app.use(errorMiddleware);
 

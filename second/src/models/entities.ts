@@ -13,6 +13,9 @@ export class User {  // Servidor
 
     @OneToMany(() => Book, (book) => book.registeredBy)
     registeredBooks!: Relation<Book[]>
+
+    @OneToMany(() => Evaluation, (evaluation) => evaluation.owner)
+    evaluations!: Relation<Evaluation[]>
 }
 
 export type BookGender = "fic" | "bio" | "tec" | "child"  // ficcao, biografia, tecnico, infantil
@@ -43,6 +46,15 @@ export class Evaluation {
     @PrimaryGeneratedColumn()
     id!: number;
 
+    @Column()
+    hasLiked!: boolean
+
+    @Column("text", { nullable: true, default: null })
+    commentary!: string | null
+
     @ManyToOne(() => Book, (book) => book.evaluations)
-    book!: Relation<Book>
+    book!: Relation<Book>;
+
+    @ManyToOne(() => User, (user) => user.evaluations)
+    owner!: Relation<User>
 }
