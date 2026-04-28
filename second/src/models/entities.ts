@@ -15,7 +15,7 @@ export class User {  // Servidor
     registeredBooks!: Relation<Book[]>
 }
 
-type BookGender = "fic" | "bio" | "tec" | "child"  // ficcao, biografia, tecnico, infantil
+export type BookGender = "fic" | "bio" | "tec" | "child"  // ficcao, biografia, tecnico, infantil
 
 @Entity()
 export class Book {
