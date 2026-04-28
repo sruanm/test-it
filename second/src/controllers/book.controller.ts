@@ -69,16 +69,6 @@ function getBookById(id: number) {
     return repo.findOneBy({ id })
 }
 
-async function getBookByIdAndThrowsNotFound(id: number) {
-    const book = await getBookById(id)
-
-    if (!book) {
-        throw new HTTPError(404, "Book not found")
-    }
-
-    return book
-}
-
 export class BookController {
     static async getAll(req: Request, res: Response<Omit<Book, "evaluations">[]>, next: NextFunction) {
         try {
@@ -105,7 +95,11 @@ export class BookController {
         try {
             const id = parseIntIdParam(req.params["id"]);
 
-            const book = await getBookByIdAndThrowsNotFound(id)
+            const book = await getBookById(id)
+
+            if (!book) {
+                throw new HTTPError(404, "Book not found")
+            }
 
             const evaluationsRepo = AppDataSource.getRepository(Evaluation)
             const evaluations = await evaluationsRepo.find({
@@ -145,12 +139,38 @@ export class BookController {
 
     static async createEvaluation(req: Request, res: Response<Omit<Evaluation, "owner" | "book">>, next: NextFunction) {
         try {
-            const id = parseIntIdParam(req.params["id"]);
+            const bookId = parseIntIdParam(req.params["id"]);
             const payload = parseCreateEvtBody(req.body);
 
-            const book = await getBookByIdAndThrowsNotFound(id)
+            const bookRepo = AppDataSource.getRepository(Book);
+            const book = await bookRepo.findOne({
+                where: { id: bookId, },
+                relations: {
+                    registeredBy: true
+                }
+            })
+
+            if (!book) {
+                throw new HTTPError(404, "Book not found")
+            }
+
+            const loggedUser = (req as any).user as User;
+
+            if (book.registeredBy.id === loggedUser.id) {
+                throw new HTTPError(409, "Book registered by user: he can not evaluate it")
+            }
 
             const evaluationRepo = AppDataSource.getRepository(Evaluation);
+
+            const findedEvaluation = await evaluationRepo.findOneBy({
+                book,
+                owner: loggedUser
+            })
+
+            if (findedEvaluation) {
+                throw new HTTPError(409, "User already evaluated this book")
+            }
+
             const newEvaluation = evaluationRepo.create({ book, ...payload })
 
             const { owner: _, book: __, ...safeEvaluation } = await evaluationRepo.save(newEvaluation)
