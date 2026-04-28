@@ -76,7 +76,7 @@ export class AuthController {
             }
 
             const ONE_MINUTE = 60;
-            const token = jwt.sign(findedUser.email, "SECRET", { expiresIn: ONE_MINUTE })
+            const token = jwt.sign({ sub: findedUser.email }, "SECRET", { expiresIn: ONE_MINUTE })
 
             const { password: _, ...safeUser } = findedUser;
             return res.status(200).json({

@@ -1,18 +1,20 @@
-import Express from 'express'
+import express from 'express'
 import { AppDataSource } from './data-source';
 import "reflect-metadata"
 import { errorMiddleware, logMiddleware } from './middlewares';
 import { authRouter } from './routers/auth.router';
+import cors from 'cors'
 
 async function main() {
-    const app = Express();
+    const app = express();
     const PORT = 3002;
 
+    app.use(cors())
+    app.use(express.json())
     app.use(logMiddleware);
 
 
-    app.use(authRouter);
-
+    app.use("/auth", authRouter);
 
     app.use(errorMiddleware);
 
