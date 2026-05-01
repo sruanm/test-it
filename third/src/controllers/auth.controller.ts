@@ -10,8 +10,8 @@ interface SignBody {
     password: string
 }
 
-function parseSignBody(body: Partial<SignBody>) {
-    if (!body.email || !body.password) {
+function parseSignBody(body: Partial<SignBody> | undefined) {
+    if (!body?.email || !body?.password) {
         throw new HTTPError(400, "Credentials must be sent");
     }
 

@@ -10,6 +10,12 @@ export class User {
 
     @Column({ select: false })
     password!: string
+
+    @OneToMany(() => JobOpportunity, (op) => op.publisher)
+    registeredOpportunities!: Relation<JobOpportunity>
+
+    @OneToMany(() => Submission, (sub) => sub.candidate)
+    submissions!: Relation<Submission>
 }
 
 @Entity()
@@ -26,6 +32,9 @@ export class JobOpportunity {
     @Column("float")
     renumeration!: number
 
+    @ManyToOne(() => User, (user) => user.registeredOpportunities, { nullable: false })
+    publisher!: Relation<User>
+
     @OneToMany(() => Submission, (sub) => sub.opportunity)
     submissions!: Relation<Submission[]>
 }
@@ -38,7 +47,9 @@ export class Submission {
     @Column("text", { nullable: true })
     message!: string | null;
 
-    @ManyToOne(() => JobOpportunity, (op) => op.submissions)
+    @ManyToOne(() => JobOpportunity, (op) => op.submissions, { nullable: false })
     opportunity!: Relation<JobOpportunity>
 
+    @ManyToOne(() => User, (user) => user.submissions, { nullable: false })
+    candidate!: Relation<User>
 }
