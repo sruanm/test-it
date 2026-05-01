@@ -53,7 +53,7 @@ POST   /job-opportunities   # Usuário registra uma vaga de emprego
 GET    /job-opportunities   # Usuário lista todas as vagas do sistema
 GET    /job-opportunities/:id/submissions   # Usuário lista todas as candidaturas a uma vaga registrada por ele
 POST   /job-opportunities/:id/submissions   # Usuário se candidata a uma vaga
-DELETE /job-opportunities/:id/submissions/:id   # Usuário cancela sua candidatura a uma vaga
+DELETE /job-opportunities/:id/submissions/:subId   # Usuário cancela sua candidatura a uma vaga
 ```
 
 Para acessar os endpoints privados é necessário passar um token de acesso na header _Authorization_, do seguinte modo: `Bearer: <token>`.

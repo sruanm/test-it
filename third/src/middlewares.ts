@@ -6,26 +6,31 @@ import { User } from "./models/entities";
 
 export function logMiddleware(mode: "req" | "res") {
     return function log(req: Request, res: Response, next: NextFunction) {
-        if (mode === "req") {
-            console.info(`[${req.method}] ${req.path}`);
-        }
+        try {
+            if (mode === "req") {
+                console.info(`[${req.method}] ${req.path}`);
+            }
 
-        else {
-            console.info(`\n[${res.statusCode}]\n`)
-        }
+            else {
+                console.info(`\n[${res.statusCode}]\n`)
+            }
 
-        return next();
+            return next();
+        } catch (err) {
+            return next(err)
+        }
     }
 }
 
 export function errorMiddleware(error: any, _req: Request, res: Response, next: NextFunction) {
     try {
-        const statusCode = error?.statusCode as number | undefined ?? 500;
-        const message = error?.customMessage as number | string ?? "Internal server error";
+        if (error) {
+            const statusCode = error?.statusCode as number | undefined ?? 500;
+            const message = error?.customMessage as number | string ?? "Internal server error";
 
-        return res.status(statusCode).json({ error: message })
-
-
+            return res.status(statusCode).json({ error: message })
+        }
+        return next()
     } catch (err) {
         return next(err);
     }
@@ -35,7 +40,7 @@ export function errorMiddleware(error: any, _req: Request, res: Response, next: 
 export async function authMiddleware(req: Request, _res: Response, next: NextFunction) {
     try {
         const token = req.headers.authorization?.split(" ")[1];
-        const unauthorized = () => { throw new HTTPError(400, "Unauthorized") }
+        const unauthorized = () => { throw new HTTPError(401, "Unauthorized") }
 
         if (!token) {
             return unauthorized();

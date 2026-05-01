@@ -4,6 +4,7 @@ import 'reflect-metadata'
 import { authMiddleware, errorMiddleware, logMiddleware } from './middlewares';
 import { authRouter } from './routers/auth.router';
 import { AppDataSource } from './data-source';
+import { opportunityRouter } from './routers/opportunity.router';
 
 async function main() {
     const app = express()
@@ -14,8 +15,9 @@ async function main() {
     app.use(logMiddleware("req"))
 
 
-    app.use(authRouter);
+    app.use("/auth", authRouter);
     app.use(authMiddleware);
+    app.use("/opportunities", opportunityRouter)
 
 
     app.use(logMiddleware("res"))

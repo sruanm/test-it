@@ -13,14 +13,6 @@ function parseCreateOpBody(body: Partial<CreateOpBody> | undefined) {
     return body;
 }
 
-function parseCreateSubBody(body: Partial<{ message: string }> | undefined) {
-    if (!body?.message) {
-        throw new HTTPError(400, "All data must be sent");
-    }
-
-    return body;
-}
-
 function parseIntId(rawId: string | undefined) {
     if (!rawId) {
         throw new HTTPError(500, "Routes misconfiguration")
@@ -38,7 +30,7 @@ export class OpportunityController {
 
             const opportunityRepo = AppDataSource.getRepository(JobOpportunity)
             const loggedUser = (req as any).user as User;
-            
+
             const findedOpportunity = await opportunityRepo.findOne({
                 where: {
                     id,
@@ -61,7 +53,7 @@ export class OpportunityController {
 
     static async cancelSubmission(req: Request, res: Response, next: NextFunction) {
         try {
-            const id = parseIntId(req.params["id"])
+            const id = parseIntId(req.params["subId"])
 
             const submissionRepo = AppDataSource.getRepository(Submission)
             const loggedUser = (req as any).user as User;
@@ -77,7 +69,7 @@ export class OpportunityController {
 
             await submissionRepo.delete(findedSubmission.id);
 
-            return res.status(204).send();
+            return res.status(204).json({});
         } catch (err) {
             return next(err)
         }
@@ -86,7 +78,7 @@ export class OpportunityController {
     static async makeSubmission(req: Request, res: Response, next: NextFunction) {
         try {
             const id = parseIntId(req.params["id"])
-            const payload = parseCreateSubBody(req.body)
+            const payload = req.body as Partial<{ message: string }> | undefined
 
             const opportunityRepo = AppDataSource.getRepository(JobOpportunity)
             const findedOpportunity = await opportunityRepo.findOne({
@@ -114,7 +106,7 @@ export class OpportunityController {
                 opportunity: findedOpportunity,
                 candidate: loggedUser
             })
-            
+
             if (findedSubmission) {
                 throw new HTTPError(409, "User can not submit to same opportunity twice")
             }
