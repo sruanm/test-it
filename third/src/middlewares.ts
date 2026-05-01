@@ -11,9 +11,9 @@ export function logMiddleware(mode: "req" | "res") {
                 console.info(`[${req.method}] ${req.path}`);
             }
 
-            else {
-                console.info(`\n[${res.statusCode}]\n`)
-            }
+            // else {
+            //     console.info(`\n[${res.statusCode}]\n`)
+            // }
 
             return next();
         } catch (err) {
